@@ -11,7 +11,9 @@ Use Settings → Accounts to pick an offline name, or `horizon-launcher account 
 
 Launcher self-update is disabled so an upstream update cannot replace the offline build.
 Horizon game releases still come from upstream and keep their signature verification.
-Build on macOS with `cd launcher && cargo build --release --locked`; package with
+Build on macOS with Rust 1.99.1 and Xcode including the Metal Toolchain
+(`xcodebuild -downloadComponent MetalToolchain`). Run
+`cd launcher && cargo +1.99.1 build --release --locked`; from the repository root package with
 `DMGBUILD=/path/to/dmgbuild packaging/macos/package.sh launcher/target/release/horizon-launcher 0.2.0 dist arm64`.
 The local app uses an ad hoc signature and is not notarized by Apple.
 
