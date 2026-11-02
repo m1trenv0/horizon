@@ -1,5 +1,13 @@
 # Third-party notices
 
+## horizon-free offline launcher changes
+
+The offline launcher changes in `launcher/src/backend.rs` and `launcher/src/cli.rs` follow
+[0CYBER/horizon-free at 3dfdf827e3](https://github.com/0CYBER/horizon-free/commit/3dfdf827e3).
+MIT License; Copyright (c) 2026 Ludovic Marie and the Horizon contributors.
+The complete license is preserved in [LICENSE](LICENSE). This fork enables the existing offline
+option and disables launcher self-update; it retains upstream download signature checks.
+
 ## wgpu-hal
 
 `third_party/wgpu-hal` is [wgpu-hal](https://github.com/gfx-rs/wgpu) 30.0.1 by the gfx-rs

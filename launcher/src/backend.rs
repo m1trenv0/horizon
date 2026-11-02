@@ -10,6 +10,9 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 
 pub const REPO: &str = "horizon-rust/horizon";
+/// This fork allows offline play from the player's own Minecraft installation.
+/// Downloading Mojang resources still requires an owner.
+pub const OFFLINE_PLAY: bool = true;
 pub const README_URL: &str = "https://github.com/horizon-rust/horizon/blob/main/launcher/README.md";
 /// The players' page on connecting an AI agent (the website's docs/agents.md).
 pub const AGENT_DOCS_URL: &str = "https://playhorizon.dev/docs/agents";
@@ -2429,7 +2432,7 @@ pub fn client(tag: &str) -> Result<Command, String> {
 /// [`client`], playing as `who` for this launch only (`play --account`).
 pub fn client_as(tag: &str, who: Option<&account::Player>) -> Result<Command, String> {
     let (session, offline) = match who {
-        None => account::session_for_game(&game_home(), false).map_err(|e| e.to_string()),
+        None => account::session_for_game(&game_home(), OFFLINE_PLAY).map_err(|e| e.to_string()),
         Some(who) => account::session_for_game_as(&game_home(), who),
     }
     .map_err(|refused| format!("{refused} Sign in with `horizon-launcher account sign-in`."))?;
@@ -2730,9 +2733,12 @@ fn launcher_asset_running_from(appimage: bool) -> Option<&'static str> {
     }
 }
 
-/// Development builds and `HORIZON_LAUNCHER_NO_SELF_UPDATE` never replace themselves.
+/// This offline fork never replaces itself with an upstream launcher requiring sign-in.
+/// Development builds and `HORIZON_LAUNCHER_NO_SELF_UPDATE` also never replace themselves.
 pub fn self_update_allowed() -> bool {
-    !cfg!(debug_assertions) && std::env::var_os("HORIZON_LAUNCHER_NO_SELF_UPDATE").is_none()
+    !OFFLINE_PLAY
+        && !cfg!(debug_assertions)
+        && std::env::var_os("HORIZON_LAUNCHER_NO_SELF_UPDATE").is_none()
 }
 
 /// The version in `horizon-launcher --version`'s output (`horizon-launcher 0.1.5`).
@@ -3346,7 +3352,10 @@ pub struct Settings {
 
 impl Settings {
     pub fn load() -> Self {
-        Self::parse(&fs::read_to_string(data_dir().join("settings.json")).unwrap_or_default())
+        let mut settings =
+            Self::parse(&fs::read_to_string(data_dir().join("settings.json")).unwrap_or_default());
+        settings.dev_offline = OFFLINE_PLAY || settings.dev_offline;
+        settings
     }
     pub fn parse(text: &str) -> Self {
         let Ok(mut value) = serde_json::from_str::<serde_json::Value>(text) else {

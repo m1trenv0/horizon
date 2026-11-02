@@ -1,5 +1,24 @@
 # Horizon launcher
 
+## Offline macOS fork
+
+This fork enables the existing offline developer option by default in the window, CLI and MCP.
+You do not need to sign in to a Microsoft account to play Horizon from your own Minecraft 26.3
+installation. Select **From my install** to prepare the resources; downloading Mojang resources
+still requires a signed-in owner. Game files are not included in this repository or app.
+Offline names work in single player and on offline-mode/LAN servers, not authenticated servers.
+Use Settings → Accounts to pick an offline name, or `horizon-launcher account offline NAME`.
+
+Launcher self-update is disabled so an upstream update cannot replace the offline build.
+Horizon game releases still come from upstream and keep their signature verification.
+Build on macOS with `cd launcher && cargo build --release --locked`; package with
+`DMGBUILD=/path/to/dmgbuild packaging/macos/package.sh launcher/target/release/horizon-launcher 0.2.0 dist arm64`.
+The local app uses an ad hoc signature and is not notarized by Apple.
+
+The offline approach follows [0CYBER/horizon-free](https://github.com/0CYBER/horizon-free/commit/3dfdf827e3),
+MIT licensed, Copyright (c) 2026 Ludovic Marie and the Horizon contributors (see [LICENSE](../LICENSE)).
+
+
 A small desktop app that installs Horizon builds, prepares them from your own copy of
 Minecraft, and starts the client or a dedicated server. Built with [GPUI Fast](https://github.com/longbridge/gpui-fast),
 a fork of Zed's UI framework [GPUI](https://www.gpui.rs) that draws unchanged views from the last frame;

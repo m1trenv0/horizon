@@ -1,5 +1,5 @@
-//! The owner gate from the outside: with no account that owns Minecraft: Java Edition in the
-//! launcher, neither `horizon-launcher play` nor the MCP server's play starts the game.
+//! Offline fork: CLI and MCP play reach resource preparation without a Microsoft account.
+//! Missing resources must still prevent launching the game.
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
@@ -44,13 +44,13 @@ fn text(out: &Output) -> String {
 }
 
 #[test]
-fn the_cli_refuses_to_play_without_an_owner() {
+fn the_cli_reaches_preparation_without_an_owner() {
     let root = home("cli");
     let out = launcher(&root, &["play"]).output().unwrap();
     let said = text(&out);
     assert!(!out.status.success(), "{said}");
-    assert!(said.contains(REFUSED), "{said}");
-    assert!(said.contains("horizon-launcher account sign-in"), "{said}");
+    assert!(said.contains("is not prepared yet"), "{said}");
+    assert!(!said.contains(REFUSED), "{said}");
     // Nothing of the game ran, and the offline name is still there.
     assert!(!root.join("game/sessions").exists());
     let accounts = std::fs::read_to_string(root.join("launcher/accounts.json")).unwrap();
@@ -59,7 +59,7 @@ fn the_cli_refuses_to_play_without_an_owner() {
 }
 
 #[test]
-fn the_mcp_server_refuses_to_play_without_an_owner() {
+fn the_mcp_server_reaches_preparation_without_an_owner() {
     let root = home("mcp");
     let mut child = launcher(&root, &["mcp"])
         .stdin(Stdio::piped())
@@ -84,6 +84,31 @@ fn the_mcp_server_refuses_to_play_without_an_owner() {
         .expect("a reply to play");
     assert_eq!(reply["result"]["isError"], true, "{reply}");
     let said = reply["result"]["content"][0]["text"].as_str().unwrap();
-    assert!(said.contains(REFUSED), "{said}");
+    assert!(said.contains("is not prepared yet"), "{said}");
+    assert!(!said.contains(REFUSED), "{said}");
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[test]
+fn offline_names_can_be_created_and_selected_without_an_owner() {
+    let root = home("offline-name");
+    for args in [
+        vec!["account", "offline", "LocalTester"],
+        vec!["account", "select", "Builder_1"],
+        vec!["account", "select", "LocalTester"],
+    ] {
+        let out = launcher(&root, &args).output().unwrap();
+        assert!(out.status.success(), "{}", text(&out));
+    }
+    let out = launcher(&root, &["--json", "account"]).output().unwrap();
+    assert!(out.status.success(), "{}", text(&out));
+    let state: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(state["owner"], false);
+    assert_eq!(state["accounts"], serde_json::json!([]));
+    assert!(state["offline"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|player| player["name"] == "LocalTester" && player["selected"] == true));
     let _ = std::fs::remove_dir_all(&root);
 }
